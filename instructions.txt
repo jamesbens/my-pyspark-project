@@ -5,3 +5,6 @@ How to submit the python script to the master or worker:
 we mention the path of the file, who is the master, and the file we want to execute
 notice: by default, if we do not define a name to the master, the project name is concatenated to it.
 docker exec -it pyspark2-spark-master-1 /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/work-dir/example1.py
+
+Goto http://localhost:8080/
+It shows the dockers are up and also which application (here example1.py) that is running or when it was completed.
