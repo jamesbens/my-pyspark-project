@@ -1,0 +1,7 @@
+This project is inspired the the PySpark Crash Course - Distributed Data Processing in Python
+ref: https://www.youtube.com/watch?v=8yCDwhGhEyE
+
+How to submit the python script to the master or worker:
+we mention the path of the file, who is the master, and the file we want to execute
+notice: by default, if we do not define a name to the master, the project name is concatenated to it.
+docker exec -it pyspark2-spark-master-1 /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/work-dir/example1.py
