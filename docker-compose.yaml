@@ -2,6 +2,7 @@ services:
   spark-master:
     image: apache/spark:4.2.0
     command: /opt/spark/sbin/start-master.sh
+    env_file: .env
     environment:
       - SPARK_NO_DAEMONIZE=true
     volumes:
@@ -15,6 +16,7 @@ services:
   spark-worker-1:
     image: apache/spark:4.2.0
     command: /opt/spark/sbin/start-worker.sh spark://spark-master:7077 --cores 2 --memory 1g
+    env_file: .env
     environment:
       - SPARK_NO_DAEMONIZE=true
     depends_on:
@@ -23,6 +25,7 @@ services:
   spark-worker-2:
     image: apache/spark:4.2.0
     command: /opt/spark/sbin/start-worker.sh spark://spark-master:7077 --cores 2 --memory 1g
+    env_file: .env
     environment:
       - SPARK_NO_DAEMONIZE=true
     depends_on:
@@ -31,6 +34,7 @@ services:
   spark-worker-3:
     image: apache/spark:4.2.0
     command: /opt/spark/sbin/start-worker.sh spark://spark-master:7077 --cores 2 --memory 1g
+    env_file: .env
     environment:
       - SPARK_NO_DAEMONIZE=true
     depends_on:
@@ -40,6 +44,7 @@ services:
   spark-worker-4:
     image: apache/spark:4.2.0
     command: /opt/spark/sbin/start-worker.sh spark://spark-master:7077 --cores 2 --memory 1g
+    env_file: .env
     environment:
       - SPARK_NO_DAEMONIZE=true
     depends_on:

@@ -1,11 +1,22 @@
+Step 1: Create the Repository on GitHub
+Go to github.com/new in your browser.
+Enter my-pyspark-project as the Repository name.
+
+Then in PowerShell:
 # 1. Initialize Git repository
 git init
 
-# 2. Stage all files
+# 2. Stage all project files
 git add .
 
 # 3. Create initial commit
 git commit -m "Initial commit"
 
-# 4. Create public or private remote repository and push code automatically
-gh repo create my-pyspark-project --private --source=. --remote=origin --push
+# 4. Rename default branch to main
+git branch -M main
+
+# 5. Connect local repo to your GitHub URL (replace with your actual URL)
+git remote add origin https://github.com/jamesbens/pyspark2-project.git
+
+# 6. Push local commits to GitHub
+git push -u origin main

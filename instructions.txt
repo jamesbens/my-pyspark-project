@@ -5,3 +5,34 @@ How to submit the python script to the master or worker:
 we mention the path of the file, who is the master, and the file we want to execute
 notice: by default, if we do not define a name to the master, the project name is concatenated to it.
 docker exec -it pyspark2-spark-master-1 /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/work-dir/example1.py
+
+Step1
+Goto http://localhost:8080/
+It shows the dockers are up and also which application (here example1.py) that is running or when it was completed.
+We can also use the explain command that shows us the execution plan.
+
+Step2
+We need to provide additional commands for Docker to be able to connect to S3
+So we provide the package org.apache.hadoop:hadoop-aws:3.5.0
+This package is compatible with pyspark 4.2.0.
+If we use a different pyspark version, we need to check which package is compatible.
+Also we need ot provide the configuration spark.jars.ivy=/tmp/,.ivy2
+Finaly we need to provide also the parameter that points to the .env file with credentials to access S3.
+We add this in the docker-compose.yaml.
+env_file: .env
+
+for this to take affect execute command: docker compose down
+then docker compose up -d (-d is to put the all process in the background)
+
+example2.py
+docker compose exec -it pyspark2-spark-master-1 /opt/spark/bin/spark-submit --master spark://spark-master:7077 --packages org.apache.hadoop:hadoop-aws:3.5.0  --conf spark.jars.ivy=/tmp/.ivy2
+/opt/spark/work-dir/example2.py
+
+example3.py
+docker exec -it pyspark2-spark-master-1 /opt/spark/bin/spark-submit --master spark://spark-master:7077 --packages org.apache.hadoop:hadoop-aws:3.5.0  --conf spark.jars.ivy=/tmp/.ivy2 /opt/spark/work-dir/example3.py
+
+docker exec -it pyspark2-spark-master /opt/spark/bin/spark-submit \
+  --master spark://spark-master:7077 \
+  --packages org.apache.hadoop:hadoop-aws:3.5.0 \
+  --conf spark.jars.ivy=/tmp/.ivy2 \
+  /opt/spark/work-dir/example3.py
