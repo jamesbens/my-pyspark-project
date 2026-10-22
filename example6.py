@@ -18,43 +18,39 @@ spark = (
 
 sc = spark.sparkContext
 
-# Correct paths
 orders_path = "s3a://my-pyspark-project-bckt/orders.csv"
 customers_path = "s3a://my-pyspark-project-bckt/customers.csv"
 
-# 2. Helper function to safely filter out header lines
-def filter_header(line):
-    # Skips common header keywords or empty rows
-    return line and not line.startswith("order_id") and not line.startswith("customer_id")
+# Helper function to split CSV lines safely
+def parse_csv(line):
+    return [col.strip(' "\'\t\r\n') for col in line.split(",")]
 
-# 3. Process Orders RDD -> (customer_id, amount)
-# CSV schema assumption: order_id, customer_id, amount
+# 2. Process Orders RDD -> (customer_id: str, amount: float)
 orders_rdd = (
     sc.textFile(orders_path)
-    .filter(filter_header)
-    .map(lambda line: line.split(","))
-    .map(lambda cols: (int(cols[1]), float(cols[2])))  # Key: customer_id (int), Value: amount (float)
+    .map(parse_csv)
+    .filter(lambda cols: len(cols) >= 3 and cols[1] != "customer_id") # Filter out header and invalid rows
+    .map(lambda cols: (str(cols[1]), float(cols[2])))                 # Keep customer_id as string
 )
 
-# 4. Process Customers RDD -> (customer_id, country)
-# CSV schema assumption: customer_id, name, country
+# 3. Process Customers RDD -> (customer_id: str, country: str)
 customers_rdd = (
     sc.textFile(customers_path)
-    .filter(filter_header)
-    .map(lambda line: line.split(","))
-    .map(lambda cols: (int(cols[0]), cols[2].strip()))  # Key: customer_id (int), Value: country (str)
+    .map(parse_csv)
+    .filter(lambda cols: len(cols) >= 3 and cols[0] != "customer_id") # Filter out header and invalid rows
+    .map(lambda cols: (str(cols[0]), cols[2]))                         # Keep customer_id as string
 )
 
-# 5. Join and Aggregate
+# 4. Join and Aggregate
 # Join yields: (customer_id, (amount, country))
 result_rdd = (
     orders_rdd.join(customers_rdd)
-    .map(lambda x: (x[1][1], (x[1][0], 1)))             # Map to: (country, (amount, count=1))
-    .reduceByKey(lambda a, b: (a[0] + b[0], a[1] + b[1]))# Sum amounts and counts per country
-    .mapValues(lambda x: x[0] / x[1])                   # Calculate average: sum / count
+    .map(lambda x: (x[1][1], (x[1][0], 1)))              # Map to: (country, (amount, count=1))
+    .reduceByKey(lambda a, b: (a[0] + b[0], a[1] + b[1])) # Sum amounts and counts per country
+    .mapValues(lambda x: x[0] / x[1])                    # Calculate average: sum / count
 )
 
-# 6. Collect and Display (Sorted descending by average amount)
+# 5. Collect and Display
 sorted_results = sorted(result_rdd.collect(), key=lambda x: -x[1])
 
 print(f"{'Country':<15} | {'Avg Amount':<10}")
