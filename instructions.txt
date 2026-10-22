@@ -1,6 +1,7 @@
 This project is inspired the the PySpark Crash Course - Distributed Data Processing in Python
 ref: https://www.youtube.com/watch?v=8yCDwhGhEyE
 
+
 How to submit the python script to the master or worker:
 we mention the path of the file, who is the master, and the file we want to execute
 notice: by default, if we do not define a name to the master, the project name is concatenated to it.
@@ -29,10 +30,22 @@ docker compose exec -it pyspark2-spark-master-1 /opt/spark/bin/spark-submit --ma
 /opt/spark/work-dir/example2.py
 
 example3.py
+
+Set the PYTHONPATH environment variable in your docker exec command so python3 can locate pyspark and its underlying py4j library:
+docker exec -e PYTHONPATH=/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.9-src.zip pyspark2-spark-master-1 python3 -c "from pyspark.sql import SparkSession; spark = SparkSession.builder.config('spark.jars.packages', 'org.apache.hadoop:hadoop-aws:3.5.0').config('spark.jars.ivy', '/tmp/.ivy2').config('spark.hadoop.fs.s3a.aws.credentials.provider', 'org.apache.hadoop.fs.s3a.EnvironmentVariableCredentialsProvider').getOrCreate(); df = spark.read.text('s3a://my-pyspark-project-bckt/corpus.txt'); df.show(5)"
+
 docker exec -it pyspark2-spark-master-1 /opt/spark/bin/spark-submit --master spark://spark-master:7077 --packages org.apache.hadoop:hadoop-aws:3.5.0  --conf spark.jars.ivy=/tmp/.ivy2 /opt/spark/work-dir/example3.py
+
 
 docker exec -it pyspark2-spark-master /opt/spark/bin/spark-submit \
   --master spark://spark-master:7077 \
   --packages org.apache.hadoop:hadoop-aws:3.5.0 \
   --conf spark.jars.ivy=/tmp/.ivy2 \
   /opt/spark/work-dir/example3.py
+
+To show how to verify inside the running Docker container that AWS environment variables are loaded correctly:
+docker exec pyspark2-spark-master-1 printenv | findstr AWS
+
+To test S3 connectivity directly using python inside the container shell:
+Boto3 automatically reads AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY from the container's environment variables.
+docker exec pyspark2-spark-master-1 python3 -c "import boto3; s3 = boto3.client('s3'); print(s3.list_objects_v2(Bucket='my-pyspark-project-bckt', MaxKeys=5))"

@@ -1,30 +1,36 @@
-# We will demonstrate the difference between the Dataframe API (high level) which is intuitive vs. working directly with the RDDs (Resilient Distributed Datasets - low level)
-# We are going to count the words in a distributed way
-
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import avg, col, split, explode
-from pyspark.sql.types import StringType
+from pyspark.sql.functions import col, count, explode, split
+from datetime import datetime
 
+now = datetime.now()
+formatted_string = now.strftime("%Y-%m-%d %H:%M:%S")
+appname = "S3_corpus"
+appname_dtm = f"{appname}_{formatted_string}"
 
-# 1. Initialize SparkSession
+# 1. Initialize SparkSession with S3 credentials
 spark = (
-    SparkSession.builder
-    .appName("S3_corpus")
+    SparkSession.builder.appName(appname_dtm)
     .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-    .config(
-        "spark.hadoop.fs.s3a.aws.credentials.provider",
-        "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider",
-    )
+    .config("spark.hadoop.fs.s3a.aws.credentials.provider",
+            "software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider")
+    # CORRECT (Specify integer in milliseconds):
+    .config("spark.hadoop.fs.s3a.connection.timeout", "60000")
     .getOrCreate()
 )
 
-# 2. Read dataset from S3
+# 2. Read plain text dataset from S3
 path = "s3a://my-pyspark-project-bckt/corpus.txt"
-#split on every empty space or new row - this gonna be a word
-# but we want the count of words on each row, hence we use explode
-counts=(
-         spark.read.txt(path, inferSchema=True, header=True)
-        .select(explode(split(col('value'),r'\s+')).alias('word'))
-        .groupBy(col('word').count())
-        )
-counts.orderBy(col('count').desc()).show(20)
+# spark.read.text reads the file into a single DataFrame column named 'value'
+df = spark.read.text(path)
+
+# 3. Explode words and calculate word counts
+counts = (
+    df.select(explode(split(col("value"), r"\s+")).alias("word"))
+    .where(col("word") != "")  # Filter out empty strings caused by extra spaces
+    .groupBy("word")
+    .agg(count("*").alias("count"))
+    .orderBy(col("count").desc())
+)
+
+# 4. Display top 20 words
+counts.show(20)
